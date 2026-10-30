@@ -13,6 +13,8 @@ Run the scripts from the repository root, in this order. Outputs go to `results/
 | Screen domestic wells, available drawdown, failures through time | `well_failure.py` | `results/domestic_wells.csv`, `failure_*.csv` |
 | Exposure by construction, depth and decade; reserves and rural municipalities | `exposure.py` | `results/exposure_summary.csv`, `rq3_*.csv` |
 | Logistic models of exposure (reserves; household income) | `rq3_model.py`, `rq3_income.py` | `results/rq3_logit.csv`, `rq3_income.csv` |
+| Replacement drilling against weather and groundwater: province-wide time series | `replacement_drilling.py` | `results/drilling_annual.csv`, `drilling_xcorr.csv`, `replacement_depth.csv` |
+| Replacement drilling: regional panel with region and year fixed effects, with placebo | `drilling_panel.py` | `results/drilling_panel.csv` |
 | Figures | `make_method_figure.py`, `make_figures.py` | `figures/` |
 
 `well_failure.py` reads environment variables for the sensitivity analyses: `MARGIN_M` (pump submergence margin, default 1 m), `DECLINE_SCALE`, `K_DONORS` (default 3), `PUMPING=1`, `MIN_YEAR` and `NO_BOUND=1`, with `TAG` as an output-file suffix. Example: `MARGIN_M=2 TAG=_m2 python well_failure.py`.
