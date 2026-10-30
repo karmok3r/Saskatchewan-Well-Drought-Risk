@@ -104,9 +104,10 @@ def fig4():
     v = pd.read_csv(RES / "decline_validation.csv")
     fig, ax = plt.subplots(figsize=(3.3, 3.1))
     for (d, c, mk) in [("1984-88", YELLOW, "o"), ("2001-03", BLUE, "s"), ("2021-23", ORANGE, "^")]:
+        shown = {"1984-88": "1983-88", "2001-03": "2000-03", "2021-23": "2020-23"}[d]  # water years, as in the text
         s = v[v.drought == d]
         ax.scatter(s.obs_decline_m, s.sim_decline_m, s=16, color=c, marker=mk, edgecolor="white", lw=0.4,
-                   label=f"{d} (n = {len(s)})")
+                   label=f"{shown} (n = {len(s)})")
     lim = [-0.3, 4]
     ax.plot(lim, lim, color=MUTED, lw=0.6, ls="--")
     ax.set_xlim(lim)
@@ -127,8 +128,8 @@ def fig4():
 def fig5():
     ts = pd.read_csv(RES / "failure_timeseries.csv")
     ts = ts[ts.basis == "intake"]
-    scen = [("2001-03", "a  2001-03 drought (3 yr)"), ("2001-03 x10yr", "b  2001-03 repeated for 10 yr"),
-            ("2021-23", "c  2021-23 drought (3 yr)")]
+    scen = [("2001-03", "a  2000-03 drought (3 yr)"), ("2001-03 x10yr", "b  2000-03 repeated for 10 yr"),
+            ("2021-23", "c  2020-23 drought (3 yr)")]
     fig, axs = plt.subplots(1, 3, figsize=(7.2, 2.4), sharey=False)
     for ax, (s, title) in zip(axs, scen):
         g = ts[ts.scenario == s]

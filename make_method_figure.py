@@ -48,8 +48,8 @@ def workflow(ax):
     box(ax, cols[0], 0.03, w, 0.40, "Obs. wells + climate",
         ["39 core WSA hydrographs", "ERA5-Land P, snowmelt, E", "1960-2025"], FILLS["data"])
     box(ax, cols[1], 0.03, w, 0.40, "Drought response",
-        ["Pastas TFN fit per well", "recharge anomaly of droughts", "1984-88, 2001-03, 2021-23,",
-         "2001-03 tiled to 5-15 yr", "dh(t) = a(t) * b(t)"], FILLS["proc"])
+        ["Pastas TFN fit per well", "recharge anomaly of droughts", "1983-88, 2000-03, 2020-23,",
+         "2000-03 tiled to 5-15 yr", "dh(t) = a(t) * b(t)"], FILLS["proc"])
     box(ax, cols[2], 0.27, w, 0.40, "Assign declines",
         ["3 nearest obs. wells", "within 150 km,", "inverse-distance weights", "-> dh(t) at each", "domestic well"],
         FILLS["link"])
