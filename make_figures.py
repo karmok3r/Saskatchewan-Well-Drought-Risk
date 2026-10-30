@@ -184,6 +184,45 @@ def fig6():
     fig.savefig(FIG / "fig6_reserves.pdf")
 
 
+def fig7():
+    o = pd.read_csv(RES / "drilling_panel.csv")
+    fig, axs = plt.subplots(1, 2, figsize=(7.2, 2.6), gridspec_kw={"width_ratios": [1.15, 1]})
+    ax = axs[0]
+    s = o[o.model == "weather, lags 0-10"].copy()
+    s["lag"] = s.term.str.extract(r"met_l(\d+)")[0].fillna(0).astype(int)
+    s = s.sort_values("lag")
+    ax.axhline(1, color=MUTED, lw=0.6, ls="--")
+    ax.errorbar(s.lag, s.rate_ratio_per_sd, yerr=[s.rate_ratio_per_sd - s.ci_lo, s.ci_hi - s.rate_ratio_per_sd],
+                fmt="o-", color=BLUE, ms=3.5, lw=1.2, capsize=2)
+    ax.set_xticks(range(0, 11))
+    ax.set_xlabel("Years since dry weather")
+    ax.set_ylabel("Replacement wells, rate ratio\nper SD drier year (95% CI)")
+    clean(ax)
+    label(ax, "a", -0.22)
+    ax = axs[1]
+    rows = [("groundwater (simulated)", "gw_sim", "Simulated level"),
+            ("groundwater (observed)", "gw_obs", "Observed level"),
+            ("weather lags 0-3 + groundwater (simulated)", "gw_sim", "Simulated, + weather 0-3 yr"),
+            ("weather lags 0-3 + groundwater (observed)", "gw_obs", "Observed, + weather 0-3 yr"),
+            ("weather lags 0-10 + groundwater (observed)", "gw_obs", "Observed, + weather 0-10 yr"),
+            ("placebo: + groundwater 3 yr later", "gw_lead3", "Placebo: level 3 yr later"),
+            ("placebo: + groundwater 5 yr later", "gw_lead5", "Placebo: level 5 yr later")]
+    for i, (m, term, lab) in enumerate(rows):
+        r = o[(o.model == m) & (o.term == term)].iloc[0]
+        c = MUTED if term.startswith("gw_lead") else ORANGE
+        ax.errorbar(r.rate_ratio_per_sd, i, xerr=[[r.rate_ratio_per_sd - r.ci_lo], [r.ci_hi - r.rate_ratio_per_sd]],
+                    fmt="o", color=c, ms=4, lw=1.1, capsize=2)
+    ax.axvline(1, color=MUTED, lw=0.6, ls="--")
+    ax.set_yticks(range(len(rows)), [r[2] for r in rows], fontsize=7)
+    ax.invert_yaxis()
+    ax.set_xlabel("Rate ratio per SD lower groundwater")
+    clean(ax)
+    label(ax, "b", -0.62)
+    fig.tight_layout(w_pad=1.5)
+    fig.savefig(FIG / "fig7_drilling.png", dpi=600)
+    fig.savefig(FIG / "fig7_drilling.pdf")
+
+
 def main():
     w = pd.read_csv(RES / "domestic_wells.csv", low_memory=False)
     fig2(w)
@@ -191,6 +230,7 @@ def main():
     fig4()
     fig5()
     fig6()
+    fig7()
 
 
 if __name__ == "__main__":
