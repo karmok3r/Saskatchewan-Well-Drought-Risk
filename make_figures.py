@@ -1,6 +1,6 @@
 """Result figures (2-6) for the manuscript. Run after the analysis scripts.
 
-Fig. 2 map of domestic wells by available drawdown, observation wells, reserves
+Fig. 2 study area: domestic wells by available drawdown, observation wells, reserves, rivers, cities
 Fig. 3 exposure: cumulative AD by construction and share exposed by depth / decade
 Fig. 4 validation: simulated vs observed drought declines at observation wells
 Fig. 5 share of wells dry through time, slow (fitted) vs fast response
@@ -35,34 +35,88 @@ def label(ax, s, x=-0.12):
 
 
 def fig2(w):
-    prov = gpd.read_file(GW / "data/basemap/ne_10m_admin_1_states_provinces.zip", bbox=(-111, 48.5, -101, 60.5))
+    base = GW / "data/basemap"
+    big = (-125, 40, -88, 61)
+    box = (-110.4, 48.75, -101.0, 56.1)
+    prov = gpd.read_file(base / "ne_10m_admin_1_states_provinces.zip", bbox=big)
     sask = prov[prov.name == "Saskatchewan"]
+    na = gpd.read_file(base / "ne_10m_rivers_north_america.zip", bbox=box)
+    rivers = pd.concat([gpd.read_file(base / "ne_10m_rivers_lake_centerlines.zip", bbox=box),
+                        na[na.name.isin(["Souris", "Qu'Appelle", "Assiniboine", "Battle", "Red Deer", "Frenchman",
+                                         "Carrot", "Saskatchewan"])]])
+    lakes = gpd.read_file(base / "ne_10m_lakes.zip", bbox=box)
     res = gpd.read_file(next((HERE / "data/raw/reserves").glob("*.shp"))).to_crs(4326)
     obs = pd.read_csv(GW / "wells_province.csv").set_index("name").loc[pd.read_csv(RES / "obs_well_response.csv").name]
-    fig, ax = plt.subplots(figsize=(4.6, 5.6))
-    sask.boundary.plot(ax=ax, color=MUTED, lw=0.6)
+
+    fig = plt.figure(figsize=(7.2, 6.3))
+    ax = fig.add_axes([0.07, 0.07, 0.62, 0.90])
+    prov.plot(ax=ax, color="#f4f3ef", edgecolor="#a8a7a2", lw=0.5)
+    sask.plot(ax=ax, color="white", edgecolor=INK, lw=0.8)
     res.plot(ax=ax, color="#c9c8c3", lw=0)
+    lakes.plot(ax=ax, color="#cfe3f5", edgecolor="#8db8de", lw=0.3)
+    rivers.plot(ax=ax, color="#6fa3d6", lw=0.6)
     x = w.dropna(subset=["ad_intake_m"]).sort_values("ad_intake_m", ascending=False)
-    bins = [(10, 1e9, "> 10 m", SEQ[0]), (5, 10, "5-10 m", SEQ[1]), (2, 5, "2-5 m", SEQ[2]), (-1e9, 2, "<= 2 m", SEQ[3])]
+    bins = [(10, 1e9, "> 10 m", SEQ[0]), (5, 10, "5-10 m", SEQ[1]), (2, 5, "2-5 m", SEQ[2]),
+            (-1e9, 2, "<= 2 m", SEQ[3])]
     for lo, hi, lab, c in bins:
         s = x[(x.ad_intake_m > lo) & (x.ad_intake_m <= hi)]
-        ax.scatter(s.lon, s.lat, s=0.6, color=c, lw=0, label=f"{lab} (n = {len(s):,})", rasterized=True)
-    ax.scatter(obs.lon, obs.lat, s=22, marker="^", color=ORANGE, edgecolor="white", lw=0.6, zorder=5,
-               label="Observation well (n = 39)")
-    h, l = ax.get_legend_handles_labels()
-    h = [Line2D([], [], marker="o", ls="", color=c, ms=4) for *_, c in bins] + [h[-1]] + \
-        [Line2D([], [], marker="s", ls="", color="#c9c8c3", ms=6)]
-    l = l[:4] + [l[-1], "First Nations reserve"]
-    ax.legend(h, l, title="Water above pump intake", loc="upper right", frameon=False, fontsize=6.5,
-              title_fontsize=7, alignment="left")
-    ax.set_xlim(-110.2, -101.2)
-    ax.set_ylim(48.9, 56.0)
-    ax.set_aspect(1 / np.cos(np.radians(52.5)))
+        ax.scatter(s.lon, s.lat, s=0.5, color=c, lw=0, rasterized=True, zorder=3)
+    ax.scatter(obs.lon, obs.lat, s=24, marker="^", color=ORANGE, edgecolor="white", lw=0.6, zorder=5)
+    cities = {"Saskatoon": (52.13, -106.67), "Regina": (50.45, -104.61), "Prince Albert": (53.20, -105.75),
+              "Moose Jaw": (50.39, -105.53), "Swift Current": (50.29, -107.80), "Yorkton": (51.21, -102.46),
+              "North Battleford": (52.76, -108.29), "Estevan": (49.14, -102.99), "Lloydminster": (53.28, -110.0)}
+    for city, (lat, lon) in cities.items():
+        ax.plot(lon, lat, marker="s", ms=3, color=INK, zorder=6)
+        left = city in ("Moose Jaw", "North Battleford")
+        ax.annotate(city, (lon, lat), xytext=(-3, 3) if left else (3, 3), ha="right" if left else "left",
+                    textcoords="offset points", fontsize=6.5, zorder=6,
+                    bbox=dict(boxstyle="round,pad=0.1", fc="white", ec="none", alpha=0.75))
+    for name, (lon, lat, rot) in {"ALBERTA": (-110.15, 51.6, 90), "MANITOBA": (-101.25, 52.6, 90),
+                                  "MONTANA (USA)": (-108.6, 48.85, 0), "NORTH DAKOTA (USA)": (-102.6, 48.85, 0)}.items():
+        ax.text(lon, lat, name, fontsize=6.5, ha="center", va="center", color=MUTED, style="italic", rotation=rot)
+    # scale bar (100 km at 52 N) and north arrow
+    km_per_deg = 111.32 * np.cos(np.radians(52))
+    x0, y0 = -109.9, 49.15
+    ax.plot([x0, x0 + 100 / km_per_deg], [y0, y0], color=INK, lw=2, solid_capstyle="butt", zorder=7)
+    ax.text(x0 + 50 / km_per_deg, y0 + 0.12, "100 km", ha="center", fontsize=6.5, zorder=7)
+    ax.annotate("N", xy=(-101.55, 55.85), xytext=(-101.55, 55.25), ha="center", fontsize=8, weight="bold",
+                arrowprops=dict(arrowstyle="-|>", color=INK, lw=1))
+    ax.set_xlim(box[0], box[2])
+    ax.set_ylim(box[1], box[3])
+    ax.set_aspect(1 / np.cos(np.radians(52)))
     ax.set_xlabel("Longitude (°)")
     ax.set_ylabel("Latitude (°)")
-    clean(ax)
-    fig.savefig(FIG / "fig2_map.png", dpi=600, bbox_inches="tight")
-    fig.savefig(FIG / "fig2_map.pdf", dpi=600, bbox_inches="tight")
+    ax.grid(color="#e3e2de", lw=0.4, zorder=0)
+    ax.tick_params(colors=INK)
+
+    handles = [Line2D([], [], marker="o", ls="", color=c, ms=4) for *_, c in bins]
+    labels = [f"{lab} (n = {len(x[(x.ad_intake_m > lo) & (x.ad_intake_m <= hi)]):,})" for lo, hi, lab, _ in bins]
+    handles += [Line2D([], [], marker="^", ls="", color=ORANGE, mec="white", ms=6),
+                Line2D([], [], marker="s", ls="", color="#c9c8c3", ms=6),
+                Line2D([], [], color="#6fa3d6", lw=1), Line2D([], [], marker="s", ls="", color=INK, ms=3)]
+    labels += ["Observation well (n = 39)", "First Nations reserve", "River", "City"]
+    fig.legend(handles, labels, title="Domestic wells: water\nabove pump intake", loc="lower left",
+               bbox_to_anchor=(0.705, 0.08), fontsize=6.5, title_fontsize=7, frameon=True, edgecolor="#cfcfcb",
+               alignment="left", handletextpad=0.4)
+
+    ins = fig.add_axes([0.715, 0.60, 0.27, 0.36])
+    prov.plot(ax=ins, color="#f4f3ef", edgecolor="#b8b7b2", lw=0.3)
+    countries = gpd.read_file(base / "ne_10m_admin_0_countries.zip", bbox=big)
+    countries.boundary.plot(ax=ins, color=INK, lw=0.5)
+    sask.plot(ax=ins, color="#d7e6f8", edgecolor=INK, lw=0.6)
+    ins.text(-112, 58.2, "CANADA", fontsize=6.5, weight="bold")
+    ins.text(-112, 44.5, "USA", fontsize=6.5, weight="bold")
+    ins.set_xlim(big[0], big[2])
+    ins.set_ylim(big[1], big[3])
+    ins.set_aspect(1 / np.cos(np.radians(50)))
+    ins.set_xticks([])
+    ins.set_yticks([])
+    ins.set_xlabel("")
+    ins.set_ylabel("")
+    for s in ins.spines.values():
+        s.set_linewidth(0.6)
+    fig.savefig(FIG / "fig2_map.png", dpi=600)
+    fig.savefig(FIG / "fig2_map.pdf", dpi=600)
 
 
 def fig3(w):
