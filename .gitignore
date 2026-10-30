@@ -1,0 +1,12 @@
+__pycache__/
+# manuscript, results and figures stay local until publication
+paper/
+results/
+figures/
+PLAN.md
+# large or re-downloadable raw files
+data/raw/statcan/*.zip
+data/raw/statcan/98-401-X2021023_*
+data/raw/statcan/README_meta.txt
+data/raw/statcan/sk_csd_selected.csv
+data/raw/reserves/*.zip
